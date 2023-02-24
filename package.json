@@ -18,6 +18,7 @@
     "nodemon": "^2.0.20"
   },
   "devDependencies": {
-    "@types/node": "^18.14.0"
+    "@types/node": "^18.14.0",
+    "webpack-cli": "^5.0.1"
   }
 }
