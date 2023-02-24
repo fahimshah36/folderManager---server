@@ -11,14 +11,14 @@ router.post("/", async (req, res, next) => {
     const id = mongoose.Types.ObjectId().toString();
 
     // Create the new folder in the database
-    const folder = new Folder({id, name, parent});
+    const folder = new Folder({id, name, parent, children: []});
     await folder.save();
 
     // Add the new folder to the parent's children array, if applicable
     if (parent) {
       const parentFolder = await Folder.findOne({id: parent});
       if (parentFolder) {
-        parentFolder.children.push(id);
+        parentFolder.children.push({id, name, parent});
         await parentFolder.save();
       }
     }
@@ -32,35 +32,78 @@ router.post("/", async (req, res, next) => {
 //get all folders
 router.get("/", async (req, res) => {
   const allFolders = await Folder.find();
-  return {data: res.status(200).json(allFolders)};
+  return res.json({data: allFolders});
+});
+
+//get folder by id
+router.get("/:id", async (req, res, next) => {
+  try {
+    const {id} = req.params;
+
+    // Find the folder by ID
+    const folder = await Folder.findOne({id});
+    if (!folder) {
+      return res.status(404).json({error: "Folder not found"});
+    }
+    console.log(folder);
+
+    // If the folder has children, populate their names from the database
+    // if (folder.children.length > 0) {
+    //   const children = await Folder.find({id: {$in: folder.children}}).select(
+    //     "-_id id name"
+    //   );
+    //   folder.children = children;
+    // }
+
+    return res.json({data: folder});
+  } catch (error) {
+    next(error);
+  }
+});
+
+//get root folder
+router.get("/root", async (req, res) => {
+  try {
+    const folder = await Folder.findById("63f783d658967d2030d7ba97");
+    return res.json({data: folder});
+  } catch (err) {
+    res.status(404).json({message: "Folders not found"});
+  }
 });
 
 //delete folder
 router.delete("/:id", async (req, res, next) => {
   try {
     const {id} = req.params;
-
+    console.log(id);
     // Find the folder to delete
-    const folder = await Folder.findOne({id});
-    if (!folder) {
+    const folderToDelete = await Folder.findOne({id});
+
+    // If folder not found, return 404
+    if (!folderToDelete) {
       return res.status(404).json({message: "Folder not found"});
     }
-    console.log(folder.parent);
-    // Remove the folder from its parent's children array, if applicable
-    if (folder.parent) {
-      const parentFolder = await Folder.findOne({id: folder.parent});
+
+    // If the folder has a parent, remove the folder's ID from its parent's children array
+    if (folderToDelete.parent) {
+      const parentFolder = await Folder.findOne({id: folderToDelete.parent});
       if (parentFolder) {
+        console.log({
+          array: parentFolder.children.pop(),
+          id: id,
+        });
         parentFolder.children = parentFolder.children.filter(
-          (childId) => childId !== id
+          (childId) => childId.id !== id
         );
+
         await parentFolder.save();
       }
     } else {
-      return res.status(404).json({message: "Root Folder cannot be deleted"});
+      return res.status(404).json({message: "Cannot delete root folder"});
     }
 
     // Delete the folder
-    await folder.delete();
+    await folderToDelete.delete();
 
     res.json({message: "Folder deleted"});
   } catch (error) {
