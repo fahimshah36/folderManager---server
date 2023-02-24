@@ -26,6 +26,10 @@ connect();
 app.use(cors());
 
 //routes
+app.use("/", (req, res) => {
+  res.json;
+  ({message: "Hello!!"});
+});
 app.use("/api/folder", folderRoutes);
 
 //connection
