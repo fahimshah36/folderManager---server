@@ -30,8 +30,11 @@ router.post("/", async (req, res, next) => {
 
 //get all folders
 router.get("/", async (req, res) => {
-  const allFolders = await Folder.find();
-  return res.json({data: allFolders});
+  // const allFolders = await Folder.find();
+  return res.json({
+    title: "Express Testing",
+    message: "The app is working properly!",
+  });
 });
 
 //get folder by id
